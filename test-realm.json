@@ -1,0 +1,54 @@
+{
+  "realm": "test",
+  "clients": [
+    {
+      "id": "f4f99c51-b7ca-43ac-9dfc-51ffb58e5b50",
+      "clientId": "client",
+      "name": "Client",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "e3rjr7sz9NVuAtRsg74XJUrEWG408o7W",
+      "protocol": "openid-connect",
+      "optionalClientScopes": [
+        "offline_access",
+        "workspaces"
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "id": "b1d14464-e86e-4e2c-a252-f3b04c6d8e11",
+      "name": "workspaces",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false",
+        "gui.order": "",
+        "consent.screen.text": ""
+      },
+      "protocolMappers": [
+        {
+          "id": "687ad859-5faa-44f6-ab97-3e9d0becbf72",
+          "name": "workspaces",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-workspaces-protocol-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "false",
+            "lightweight.claim": "false",
+            "access.token.claim": "true",
+            "claim.name": "workspaces",
+            "userinfo.token.claim": "false",
+            "apiUrl": "http://localhost:8081/api"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "user",
+      "enabled": true
+    }
+  ]
+}

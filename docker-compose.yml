@@ -15,7 +15,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["start-dev"]
+    command: ["start-dev", "--import-realm"]
     container_name: keycloak
     environment:
       DB_VENDOR: postgres
@@ -25,8 +25,11 @@ services:
       DB_PASSWORD: password
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_LOG_LEVEL: INFO
     ports:
       - "8080:8080"
+    volumes:
+      - ./test-realm.json:/opt/keycloak/data/import/test-realm.json
     depends_on:
       - postgres
     networks:

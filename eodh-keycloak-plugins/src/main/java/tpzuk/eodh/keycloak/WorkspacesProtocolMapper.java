@@ -1,5 +1,6 @@
 package tpzuk.eodh.keycloak;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.*;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
@@ -11,6 +12,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.util.UserSessionUtil;
 
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
@@ -23,6 +25,8 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
 
     public static final String PROVIDER_ID = "oidc-workspaces-protocol-mapper";
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+
+    private static final Logger logger = Logger.getLogger(WorkspacesProtocolMapper.class);
 
     static {
         ProviderConfigProperty property;
@@ -41,10 +45,14 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession,
             KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
-        String username = userSession.getUser().getUsername();
-        String workspaceName = getWorkspaceNameFromScope(userSession);
 
-        if (workspaceName != null && isUserAuthorizedForWorkspace(mappingModel.getConfig().get("apiUrl"),
+        String username = userSession.getUser().getUsername();
+        String workspaceName = getWorkspaceNameFromScope(mappingModel, clientSessionCtx);
+        if (workspaceName == null) {
+            return;
+        }
+
+        if (isUserAuthorizedForWorkspace(mappingModel.getConfig().get("apiUrl"),
                 username, workspaceName)) {
             OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaceName);
         } else {
@@ -54,8 +62,18 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
     }
 
     // TODO: this just assumes the workspace is the user's username for now
-    private String getWorkspaceNameFromScope(UserSessionModel userSession) {
-        return userSession.getUser().getUsername();
+    private String getWorkspaceNameFromScope(ProtocolMapperModel mappingModel,
+            ClientSessionContext clientSessionCtx) {
+
+        String claimName = mappingModel.getConfig().get("claim.name") + ':';
+
+        for (String scope : clientSessionCtx.getClientScopeIds()) {
+            logger.info("Checking scope: " + scope);
+            if (scope.startsWith(claimName)) {
+                return scope.substring(claimName.length());
+            }
+        }
+        return null;
     }
 
     private boolean isUserAuthorizedForWorkspace(String url, String username, String workspaceName) {
