@@ -14,6 +14,6 @@ mvn clean package
 A local Docker build has been provided using Docker Compose.
 
 ```bash
-docker compose up
+docker compose up --build
 docker compose down
 ```

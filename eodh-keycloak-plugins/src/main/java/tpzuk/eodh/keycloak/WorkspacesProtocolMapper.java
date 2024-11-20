@@ -1,7 +1,11 @@
 package tpzuk.eodh.keycloak;
 
 import org.keycloak.models.*;
-import org.keycloak.protocol.oidc.mappers.*;
+import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
@@ -14,7 +18,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 
-public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
+public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
+        implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
     public static final String PROVIDER_ID = "oidc-workspaces-protocol-mapper";
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
@@ -26,7 +31,11 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper impleme
         property.setLabel("API URL");
         property.setHelpText("The URL of the API to check workspace authorization.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setRequired(true);
         configProperties.add(property);
+
+        OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
+        OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, WorkspacesProtocolMapper.class);
     }
 
     @Override
@@ -35,8 +44,9 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper impleme
         String username = userSession.getUser().getUsername();
         String workspaceName = getWorkspaceNameFromScope(userSession);
 
-        if (workspaceName != null && isUserAuthorizedForWorkspace(username, workspaceName, mappingModel)) {
-            token.getOtherClaims().put("workspaces", workspaceName);
+        if (workspaceName != null && isUserAuthorizedForWorkspace(mappingModel.getConfig().get("apiUrl"),
+                username, workspaceName)) {
+            OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaceName);
         } else {
             throw new ErrorResponseException("forbidden", "User is not authorized for the workspace",
                     Response.Status.FORBIDDEN);
@@ -48,10 +58,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper impleme
         return userSession.getUser().getUsername();
     }
 
-    private boolean isUserAuthorizedForWorkspace(String username, String workspaceName,
-            ProtocolMapperModel mappingModel) {
-        String apiUrl = mappingModel.getConfig().get("apiUrl");
-
+    private boolean isUserAuthorizedForWorkspace(String url, String username, String workspaceName) {
         return true; // TODO: actually check permissions
 
         // try {
