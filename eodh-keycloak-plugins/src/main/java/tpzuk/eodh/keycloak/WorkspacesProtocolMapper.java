@@ -47,22 +47,25 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
 
         String username = userSession.getUser().getUsername();
-        String workspaceName = getWorkspaceNameFromScope(mappingModel, clientSessionCtx);
-        if (workspaceName == null) {
+        String workspace = userSession.getUser().getUsername();
+        // String workspace = getWorkspaceFromScope(mappingModel,
+        // clientSessionCtx);
+        if (workspace == null) {
             return;
         }
 
+        logger.info("Setting claim for user: " + username + " and workspace: " + workspace);
+
         if (isUserAuthorizedForWorkspace(mappingModel.getConfig().get("apiUrl"),
-                username, workspaceName)) {
-            OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaceName);
+                username, workspace)) {
+            OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspace);
         } else {
             throw new ErrorResponseException("forbidden", "User is not authorized for the workspace",
                     Response.Status.FORBIDDEN);
         }
     }
 
-    // TODO: this just assumes the workspace is the user's username for now
-    private String getWorkspaceNameFromScope(ProtocolMapperModel mappingModel,
+    private String getWorkspaceFromScope(ProtocolMapperModel mappingModel,
             ClientSessionContext clientSessionCtx) {
 
         String claimName = mappingModel.getConfig().get("claim.name") + ':';
@@ -76,27 +79,31 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
         return null;
     }
 
-    private boolean isUserAuthorizedForWorkspace(String url, String username, String workspaceName) {
-        return true; // TODO: actually check permissions
-
-        // try {
-        // URL url = new URL(apiUrl + "?username=" + username + "&workspace=" +
-        // workspaceName);
-        // HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        // connection.setRequestMethod("GET");
-        // int responseCode = connection.getResponseCode();
-        // if (responseCode == 200) {
-        // // Parse the response body to check if the result is true
-        // // For simplicity, assume the response body is a plain text "true" or "false"
-        // Scanner scanner = new Scanner(connection.getInputStream());
-        // String responseBody = scanner.nextLine();
-        // scanner.close();
-        // return Boolean.parseBoolean(responseBody);
-        // }
-        // } catch (IOException e) {
-        // e.printStackTrace();
-        // }
-        // return false;
+    private boolean isUserAuthorizedForWorkspace(String url, String username, String workspace) {
+        try {
+            URL url = new URL(apiUrl);
+            connection.setDoOutput(true);
+            String jsonInputString = String.format("{\"username\": \"%s\", \"workspace\": \"%s\"}", username,
+                    workspace);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+            connection.setRequestMethod("POST");
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                // Parse the response body to check if the result is true
+                // For simplicity, assume the response body is a plain text "true" or "false"
+                Scanner scanner = new Scanner(connection.getInputStream());
+                String responseBody = scanner.nextLine();
+                scanner.close();
+                return Boolean.parseBoolean(responseBody);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
