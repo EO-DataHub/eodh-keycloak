@@ -39,7 +39,7 @@
             "access.token.claim": "true",
             "claim.name": "workspaces",
             "userinfo.token.claim": "false",
-            "apiUrl": "http://localhost:8081/api"
+            "apiUrl": "http://localhost:8000/api/workspaces/authorized"
           }
         }
       ]
