@@ -10,12 +10,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - keycloak-network
-
+    restart: always
   keycloak:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["start-dev", "--import-realm"]
+    command: [start-dev, --import-realm, --features, dynamic-scopes]
     container_name: keycloak
     environment:
       DB_VENDOR: postgres
@@ -32,6 +32,18 @@ services:
       - ./test-realm.json:/opt/keycloak/data/import/test-realm.json
     depends_on:
       - postgres
+    networks:
+      - keycloak-network
+    restart: always
+  workspaces:
+    build: 
+      context: .
+      dockerfile: Dockerfile.workspaces
+    container_name: workspaces
+    environment:
+      ALLOWED_USER: user
+    ports:
+      - "8000:8000"
     networks:
       - keycloak-network
     restart: always
