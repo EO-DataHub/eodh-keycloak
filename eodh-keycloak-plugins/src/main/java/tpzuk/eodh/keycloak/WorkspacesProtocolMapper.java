@@ -40,42 +40,9 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
         property.setRequired(true);
         configProperties.add(property);
 
-        property = new ProviderConfigProperty();
-        property.setName(ProtocolMapperUtils.MULTIVALUED);
-        property.setLabel(ProtocolMapperUtils.MULTIVALUED_LABEL);
-        property.setHelpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT);
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        configProperties.add(property);
-
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties,
                 WorkspacesProtocolMapper.class);
-    }
-
-    public static ProtocolMapperModel createClaimMapper(String name, String apiUrl) {
-        logger.info("*** createClaimMapper ***");
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<>();
-        config.put(ProtocolMapperUtils.MULTIVALUED, "true");
-        config.put("apiUrl", apiUrl);
-        mapper.setConfig(config);
-        return mapper;
-    }
-
-    public static ProtocolMapperModel create(String name, String apiUrl) {
-        logger.info("*** createClaimMapper ***");
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<>();
-        config.put("test", "true");
-        config.put("apiUrl", apiUrl);
-        mapper.setConfig(config);
-        return mapper;
     }
 
     @Override
@@ -84,6 +51,9 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             ClientSessionContext clientSessionCtx) {
 
         Collection<String> workspaces = Arrays.asList("workspace1", "workspace2");
+
+        // force multivalued as the attribute is not defined for this mapper
+        mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
 
         logger.info("Setting workspaces claim...");
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaces);

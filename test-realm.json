@@ -2,7 +2,6 @@
   "realm": "test",
   "clients": [
     {
-      "id": "f4f99c51-b7ca-43ac-9dfc-51ffb58e5b50",
       "clientId": "client",
       "name": "Client",
       "clientAuthenticatorType": "client-secret",
@@ -33,8 +32,7 @@
             "lightweight.claim": "false",
             "access.token.claim": "true",
             "userinfo.token.claim": "false",
-            "apiUrl": "http://localhost:8000/api/workspaces/authorized",
-            "multivalued": "true"
+            "apiUrl": "http://localhost:8000/api/workspaces/authorized"
           }
         }
       ]
