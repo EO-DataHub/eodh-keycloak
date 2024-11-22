@@ -22,8 +22,9 @@ async def is_authorized(request: Request):
 
 
 @app.get("/api/workspaces")
-async def get_workspaces(request: Request):
-    if request.data["user"] == allowed_user:
+async def get_workspaces():
+    logging.info("Getting workspaces")
+    if True:
         workspaces = ["workspace1", "workspace2"]
     else:
         workspaces = []

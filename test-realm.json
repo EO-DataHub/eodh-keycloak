@@ -32,7 +32,7 @@
             "lightweight.claim": "false",
             "access.token.claim": "true",
             "userinfo.token.claim": "false",
-            "apiUrl": "http://localhost:8000/api/workspaces/authorized"
+            "apiUrl": "http://workspaces:8000/api/workspaces"
           }
         }
       ]
