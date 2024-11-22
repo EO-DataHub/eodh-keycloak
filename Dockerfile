@@ -1,7 +1,8 @@
 FROM maven:3 AS builder
 
 WORKDIR /build
-COPY eodh-keycloak-plugins/* .
+COPY eodh-keycloak-plugins/pom.xml pom.xml
+COPY eodh-keycloak-plugins/src src
 RUN mvn clean package
 
 

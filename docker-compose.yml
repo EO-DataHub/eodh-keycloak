@@ -4,8 +4,10 @@ services:
     container_name: keycloak-postgres
     environment:
       POSTGRES_DB: keycloak
-      POSTGRES_USER: keycloak
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+    ports:
+      - "8432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -15,14 +17,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: [start-dev, --import-realm, --features, dynamic-scopes]
+    command: [start-dev, --import-realm]
+    # command: [start-dev, --import-realm, --features, dynamic-scopes]
     container_name: keycloak
     environment:
-      DB_VENDOR: postgres
-      DB_ADDR: postgres
-      DB_DATABASE: keycloak
-      DB_USER: keycloak
-      DB_PASSWORD: password
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: password
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_LOG_LEVEL: INFO
