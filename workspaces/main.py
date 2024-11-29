@@ -1,7 +1,6 @@
 import logging
-import os
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -11,21 +10,18 @@ logging.basicConfig(
 )
 
 app = FastAPI()
-allowed_user = os.environ.get("ALLOWED_USER", "test")
-
-
-@app.post("/api/workspaces/authorized")
-async def is_authorized(request: Request):
-    is_authorized = request.data["user"] == allowed_user
-    logging.info(f"User {request.data['user']} is authorized: {is_authorized}")
-    return {"authorized": is_authorized}
 
 
 @app.get("/api/workspaces")
 async def get_workspaces():
-    logging.info("Getting workspaces")
-    if True:
-        workspaces = ["workspace1", "workspace2"]
-    else:
-        workspaces = []
-    return {"workspaces": workspaces}
+    logging.info("REQUEST: GET /api/workspaces")
+    return {
+        "workspaces": [
+            {
+                "name": "workspace1",
+            },
+            {
+                "name": "workspace2",
+            },
+        ]
+    }

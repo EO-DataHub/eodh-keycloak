@@ -38,7 +38,7 @@ services:
       - keycloak-network
     restart: always
   workspaces:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.workspaces
     container_name: workspaces
