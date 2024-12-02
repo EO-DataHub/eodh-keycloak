@@ -9,6 +9,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.ErrorResponseException;
 
@@ -16,7 +17,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonElement;
 
 import jakarta.ws.rs.core.Response;
 
@@ -57,17 +57,33 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             UserSessionModel userSession, KeycloakSession keycloakSession,
             ClientSessionContext clientSessionCtx) {
 
-        logger.info("Setting workspaces claim...");
+        // Get available workspaces for user
         Collection<String> workspaces = getWorkspaces(
-                mappingModel.getConfig().get("apiUrl"));
+                mappingModel.getConfig().get("apiUrl"), token.toString());
 
-        // force multivalued as the attribute is not defined for this mapper
+        // Check if there are any dynamic scopes to be applied
+        logger.info("token claim name: " + mappingModel.getConfig()
+                .get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME));
+        for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
+                .getAuthorizationDetailEntries()) {
+
+            if (!details.isDynamicScope() || !details.getClientScope().getName().equals(mappingModel.getConfig()
+                    .get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME))) {
+                continue;
+            }
+
+            logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
+            workspaces = workspaces.stream().filter(workspace -> workspace.equals(details.getDynamicScopeParam()))
+                    .toList();
+        }
+
+        // Force multivalued as the attribute is not defined for this mapper
         mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
 
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaces);
     }
 
-    protected Collection<String> getWorkspaces(String apiUrl) {
+    protected Collection<String> getWorkspaces(String apiUrl, String token) {
         try {
             // Prepare the request
             URL url;
@@ -81,6 +97,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             con.setRequestProperty("Content-Type", "application/json");
+            con.setRequestProperty("Authorization", "Bearer " + token);
 
             // Check the response
             int status = con.getResponseCode();

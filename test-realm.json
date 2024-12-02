@@ -21,7 +21,8 @@
         "include.in.token.scope": "true",
         "display.on.consent.screen": "false",
         "gui.order": "0",
-        "consent.screen.text": ""
+        "consent.screen.text": "",
+        "is.dynamic.scope": "true"
       },
       "protocolMappers": [
         {

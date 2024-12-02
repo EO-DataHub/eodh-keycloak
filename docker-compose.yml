@@ -17,8 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: [start-dev, --import-realm]
-    # command: [start-dev, --import-realm, --features, dynamic-scopes]
+    command: [start-dev, --import-realm, --features, dynamic-scopes]
     container_name: keycloak
     environment:
       KC_DB: postgres

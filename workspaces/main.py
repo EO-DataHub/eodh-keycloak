@@ -1,6 +1,7 @@
+import json
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -13,8 +14,9 @@ app = FastAPI()
 
 
 @app.get("/api/workspaces")
-async def get_workspaces():
+async def get_workspaces(request: Request):
     logging.info("REQUEST: GET /api/workspaces")
+    logging.info("Headers: %s", json.dumps(dict(request.headers)))
     return {
         "workspaces": [
             {
