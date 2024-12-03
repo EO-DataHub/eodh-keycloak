@@ -63,8 +63,6 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
                 mappingModel.getConfig().get("apiUrl"), keycloakSession.tokens().encode(token));
 
         // Check if there are any dynamic scopes to be applied
-        logger.info("token claim name: " + mappingModel.getConfig()
-                .get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME));
         for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
                 .getAuthorizationDetailEntries()) {
 
@@ -160,7 +158,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
 
     @Override
     public String getHelpText() {
-        return "Adds a user authorized workspaces to claims.";
+        return "Adds user authorized workspaces to claims. Dynamic scoping can be used to filter workspaces.";
     }
 
     @Override
