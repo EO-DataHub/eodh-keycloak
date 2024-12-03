@@ -10,6 +10,6 @@ MAKEFLAGS += --no-print-directory
 build:
 	$(docker) build -t $(image):$(version) .
 
-.PHONY: deploy
-deploy:
+.PHONY: publish
+publish:
 	$(docker) push $(image):$(version)

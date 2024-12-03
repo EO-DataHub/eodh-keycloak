@@ -45,6 +45,11 @@
       <artifactId>keycloak-server-spi-private</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <properties>
