@@ -7,6 +7,13 @@ cd eodh-keycloak-plugins
 mvn clean package
 ```
 
+## Deploy
+
+```bash
+make build
+make push
+```
+
 ## Testing
 
 ### Docker
