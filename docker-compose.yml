@@ -42,7 +42,7 @@ services:
       dockerfile: Dockerfile.workspaces
     container_name: workspaces
     environment:
-      ALLOWED_USER: user
+      ALLOWED_USERS: user
     ports:
       - "8000:8000"
     networks:

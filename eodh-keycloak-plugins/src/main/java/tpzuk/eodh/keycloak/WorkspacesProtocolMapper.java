@@ -58,8 +58,9 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             ClientSessionContext clientSessionCtx) {
 
         // Get available workspaces for user
+        token.setPreferredUsername(userSession.getUser().getUsername());
         Collection<String> workspaces = getWorkspaces(
-                mappingModel.getConfig().get("apiUrl"), token.toString());
+                mappingModel.getConfig().get("apiUrl"), keycloakSession.tokens().encode(token));
 
         // Check if there are any dynamic scopes to be applied
         logger.info("token claim name: " + mappingModel.getConfig()
@@ -75,6 +76,11 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
             workspaces = workspaces.stream().filter(workspace -> workspace.equals(details.getDynamicScopeParam()))
                     .toList();
+
+            if (workspaces.isEmpty()) {
+                throw new ErrorResponseException("Forbidden", "Requested workspace not authorized",
+                        Response.Status.FORBIDDEN);
+            }
         }
 
         // Force multivalued as the attribute is not defined for this mapper
@@ -83,7 +89,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaces);
     }
 
-    protected Collection<String> getWorkspaces(String apiUrl, String token) {
+    private Collection<String> getWorkspaces(String apiUrl, String token) {
         try {
             // Prepare the request
             URL url;
@@ -99,11 +105,12 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             con.setRequestProperty("Content-Type", "application/json");
             con.setRequestProperty("Authorization", "Bearer " + token);
 
-            // Check the response
+            // Check the response status
             int status = con.getResponseCode();
 
             if (status >= 400) {
-                throw new ErrorResponseException("API Error", "API request failed",
+                throw new ErrorResponseException("Error Retrieving Workspaces",
+                        "Get Workspaces request failed with status " + status,
                         Response.Status.fromStatusCode(status));
             }
 
