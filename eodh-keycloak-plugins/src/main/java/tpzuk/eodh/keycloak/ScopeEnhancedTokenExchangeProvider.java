@@ -1,6 +1,7 @@
 package tpzuk.eodh.keycloak;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -79,7 +80,7 @@ import jakarta.ws.rs.core.Response;
  *
  * @author <a href="mailto:dmitryt@backbase.com">Dmitry Telegin</a>
  */
-public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
+public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultTokenExchangeProvider.class);
 
@@ -765,4 +766,28 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
     }
 
+    public static class Factory implements TokenExchangeProviderFactory {
+
+        @Override
+        public TokenExchangeProvider create(KeycloakSession session) {
+            return new ScopeEnhancedTokenExchangeProvider();
+        }
+
+        @Override
+        public void init(Config.Scope config) {
+        };
+
+        @Override
+        public void postInit(KeycloakSessionFactory factory) {
+        };
+
+        @Override
+        public void close() {
+        };
+
+        @Override
+        public String getId() {
+            return "scope-enhanced-token-exchange";
+        }
+    }
 }
