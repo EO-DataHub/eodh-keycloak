@@ -80,7 +80,6 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             ClientSessionContext clientSessionCtx) {
 
         // Get available workspaces for user
-        token.setPreferredUsername(userSession.getUser().getUsername());
         Collection<String> workspaces = getWorkspaces(
                 mappingModel, keycloakSession.tokens().encode(token));
 
@@ -206,5 +205,10 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public int getPriority() {
+        return 60;
     }
 }
