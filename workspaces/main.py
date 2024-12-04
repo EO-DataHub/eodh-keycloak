@@ -50,12 +50,15 @@ async def get_workspaces(request: Request):
         raise HTTPException(status_code=403, detail="Forbidden")
 
     return {
-        "workspaces": [
-            {
-                "name": "workspace1",
-            },
-            {
-                "name": "workspace2",
-            },
-        ]
+        "success": 1,
+        "data": {
+            "workspaces": [
+                {
+                    "name": "workspace1",
+                },
+                {
+                    "name": "workspace2",
+                },
+            ]
+        },
     }

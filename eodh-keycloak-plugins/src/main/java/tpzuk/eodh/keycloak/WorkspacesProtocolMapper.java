@@ -14,9 +14,9 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.services.ErrorResponseException;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonObject;
 
 import jakarta.ws.rs.core.Response;
 
@@ -33,6 +33,9 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
 
     public static final String PROVIDER_ID = "oidc-workspaces-protocol-mapper";
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+    private static final String API_URL = "apiUrl";
+    private static final String WORKSPACES_RESPONSE_PATH = "workspacesResponsePath";
+    private static final String WORKSPACE_NAME_PATH = "workspaceNamePath";
 
     private static final Logger logger = Logger.getLogger(
             WorkspacesProtocolMapper.class);
@@ -40,11 +43,30 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
     static {
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
-        property.setName("apiUrl");
+        property.setName(API_URL);
         property.setLabel("API URL");
         property.setHelpText("The URL of the API to check workspace authorization.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setRequired(true);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(WORKSPACES_RESPONSE_PATH);
+        property.setLabel("Workspaces Response Path");
+        property.setHelpText("The path within the response to the workspaces array. Separate children with dots.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setDefaultValue("workspaces");
+        property.setRequired(false);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(WORKSPACE_NAME_PATH);
+        property.setLabel("Workspace Name Path");
+        property.setHelpText(
+                "The path within the workspace object to the workspace name. Separate children with dots.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setRequired(false);
+        property.setDefaultValue("name");
         configProperties.add(property);
 
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
@@ -60,7 +82,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
         // Get available workspaces for user
         token.setPreferredUsername(userSession.getUser().getUsername());
         Collection<String> workspaces = getWorkspaces(
-                mappingModel.getConfig().get("apiUrl"), keycloakSession.tokens().encode(token));
+                mappingModel, keycloakSession.tokens().encode(token));
 
         // Check if there are any dynamic scopes to be applied
         for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
@@ -87,7 +109,11 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaces);
     }
 
-    private Collection<String> getWorkspaces(String apiUrl, String token) {
+    private Collection<String> getWorkspaces(ProtocolMapperModel mapping, String token) {
+        String apiUrl = mapping.getConfig().get(API_URL);
+        String workspacesPath = mapping.getConfig().get(WORKSPACES_RESPONSE_PATH);
+        String workspaceNamePath = mapping.getConfig().get(WORKSPACE_NAME_PATH);
+
         try {
             // Prepare the request
             URL url;
@@ -124,18 +150,29 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             con.disconnect();
 
             // Parse the response
-            JsonObject data = JsonParser.parseString(content.toString()).getAsJsonObject();
-            JsonArray workspacesJson;
+            Collection<String> workspaces = new ArrayList<>();
             try {
-                workspacesJson = data.get("workspaces").getAsJsonArray();
+                // Get the workspaces array
+                JsonElement el = JsonParser.parseString(content.toString());
+                for (String path : workspacesPath.split("\\.")) {
+                    logger.info("Path: " + path);
+                    el = el.getAsJsonObject().get(path);
+                }
+                JsonArray array = el.getAsJsonArray();
+
+                // Get the workspace name for each workspace in list
+                for (JsonElement el2 : array) {
+                    for (String path : workspaceNamePath.split("\\.")) {
+                        el2 = el2.getAsJsonObject().get(path);
+                    }
+                    workspaces.add(el2.getAsString());
+                }
             } catch (JsonParseException e) {
-                logger.error("Error parsing user workspaces", e);
+                logger.error(String.format("Error parsing user workspaces, workspaces path: %s, name path: %s",
+                        workspacesPath, workspaceNamePath), e);
                 throw new ErrorResponseException("Server Error", "Error parsing user workspaces",
                         Response.Status.INTERNAL_SERVER_ERROR);
             }
-            Collection<String> workspaces = new ArrayList<>();
-            workspacesJson.forEach(workspace -> workspaces.add(
-                    workspace.getAsJsonObject().get("name").getAsString()));
 
             // Return the workspaces
             return workspaces;

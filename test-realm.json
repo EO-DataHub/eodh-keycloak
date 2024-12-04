@@ -37,7 +37,9 @@
             "lightweight.claim": "false",
             "access.token.claim": "true",
             "userinfo.token.claim": "false",
-            "apiUrl": "http://workspaces:8000/api/workspaces"
+            "apiUrl": "http://workspaces:8000/api/workspaces",
+            "workspacesResponsePath": "data.workspaces",
+            "workspaceNamePath": "name"
           }
         }
       ]

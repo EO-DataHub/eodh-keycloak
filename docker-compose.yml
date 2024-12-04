@@ -17,7 +17,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: [start-dev, --import-realm, --features, dynamic-scopes]
+    command:
+      - start-dev
+      - --import-realm
+      - --features
+      - dynamic-scopes:v1,token-exchange:v1
+      # - --spi-oauth2-token-exchange-provider
+      # - tpzuk.eodh.keycloak.TPZUKTokenExchangeProvider
     container_name: keycloak
     environment:
       KC_DB: postgres
