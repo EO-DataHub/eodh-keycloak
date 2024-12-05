@@ -75,11 +75,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-/**
- * Default token exchange implementation
- *
- * @author <a href="mailto:dmitryt@backbase.com">Dmitry Telegin</a>
- */
+/// A modification of the standard Keycloak TokenExchangeProvider that adds support for
+/// increasing the scope of the target token from that of the subject token.
 public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultTokenExchangeProvider.class);

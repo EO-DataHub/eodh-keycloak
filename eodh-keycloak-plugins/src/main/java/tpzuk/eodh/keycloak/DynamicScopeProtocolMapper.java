@@ -14,6 +14,8 @@ import org.keycloak.representations.IDToken;
 
 import java.util.*;
 
+/// This class is a ProtocolMapper that adds dynamic scope parameters to claims.
+/// No authorisation takes place, so the user can map any value(s) to the claim.
 public class DynamicScopeProtocolMapper extends AbstractOIDCProtocolMapper
         implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 

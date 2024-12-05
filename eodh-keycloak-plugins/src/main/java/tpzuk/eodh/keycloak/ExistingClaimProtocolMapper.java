@@ -12,6 +12,9 @@ import org.keycloak.representations.IDToken;
 
 import java.util.*;
 
+/// This class is a ProtocolMapper that adds an existing claim to a token under a 
+/// different path. Useful for when a certain client needs claims under a path that
+/// differs from standard claims.
 public class ExistingClaimProtocolMapper extends AbstractOIDCProtocolMapper
         implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 

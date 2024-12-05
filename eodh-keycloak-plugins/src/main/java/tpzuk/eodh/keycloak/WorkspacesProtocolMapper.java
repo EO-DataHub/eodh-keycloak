@@ -28,6 +28,9 @@ import java.net.URI;
 import java.net.URL;
 import java.util.*;
 
+/// This class is a ProtocolMapper that adds user authorized workspaces to claims.
+/// Authorized workflows are fetched from an API and added to the token. The path to
+/// the workspaces array and the workspace name within the array can be configured.
 public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
         implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
