@@ -27,6 +27,33 @@
       },
       "protocolMappers": [
         {
+          "name": "username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "preferred_username",
+            "id.token.claim": "false",
+            "lightweight.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "user.attribute": "username"
+          }
+        },
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "groups",
+            "id.token.claim": "false",
+            "lightweight.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
           "name": "workspaces",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-workspaces-protocol-mapper",
@@ -40,6 +67,20 @@
             "apiUrl": "http://workspaces:8000/api/workspaces",
             "workspacesResponsePath": "data.workspaces",
             "workspaceNamePath": "name"
+          }
+        },
+        {
+          "name": "aws-workspaces",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-existing-claim-protocol-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "aws.workspaces",
+            "id.token.claim": "false",
+            "lightweight.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "existingClaim": "workspaces"
           }
         }
       ]
