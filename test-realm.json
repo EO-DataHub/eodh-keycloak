@@ -110,6 +110,20 @@
             "access.token.claim": "true",
             "userinfo.token.claim": "false"
           }
+        },
+        {
+          "name": "aws-user-services",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-existing-claim-protocol-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "aws.user_services",
+            "id.token.claim": "false",
+            "lightweight.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "existingClaim": "user_services"
+          }
         }
       ]
     }
