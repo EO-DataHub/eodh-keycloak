@@ -27,6 +27,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /// This class is a ProtocolMapper that adds user authorized workspaces to claims.
 /// Authorized workflows are fetched from an API and added to the token. The path to
@@ -83,7 +84,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             ClientSessionContext clientSessionCtx) {
 
         // Get available workspaces for user
-        Collection<String> workspaces = getWorkspaces(
+        Set<String> workspaces = getWorkspaces(
                 mappingModel, keycloakSession.tokens().encode(token));
 
         // Check if there are any dynamic scopes to be applied
@@ -97,7 +98,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
 
             logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
             workspaces = workspaces.stream().filter(workspace -> workspace.equals(details.getDynamicScopeParam()))
-                    .toList();
+                    .collect(Collectors.toSet());
 
             if (workspaces.isEmpty()) {
                 throw new ErrorResponseException("Forbidden", "Requested workspace not authorized",
@@ -111,7 +112,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaces);
     }
 
-    private Collection<String> getWorkspaces(ProtocolMapperModel mapping, String token) {
+    private Set<String> getWorkspaces(ProtocolMapperModel mapping, String token) {
         String apiUrl = mapping.getConfig().get(API_URL);
         String workspacesPath = mapping.getConfig().get(WORKSPACES_RESPONSE_PATH);
         String workspaceNamePath = mapping.getConfig().get(WORKSPACE_NAME_PATH);
@@ -152,7 +153,7 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             con.disconnect();
 
             // Parse the response
-            Collection<String> workspaces = new ArrayList<>();
+            Set<String> workspaces = new HashSet<String>();
             try {
                 // Get the workspaces array
                 JsonElement el = JsonParser.parseString(content.toString());

@@ -6,10 +6,10 @@ version ?= 26.0.4-0.1.0
 .SILENT:
 MAKEFLAGS += --no-print-directory
 
-.PHONY: build
-build:
+.PHONY: container-build
+container-build:
 	$(docker) build -t $(image):$(version) .
 
-.PHONY: publish
-publish:
+.PHONY: container-push
+container-push:
 	$(docker) push $(image):$(version)
