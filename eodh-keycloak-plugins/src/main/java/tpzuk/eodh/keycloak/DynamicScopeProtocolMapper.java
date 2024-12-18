@@ -26,6 +26,13 @@ public class DynamicScopeProtocolMapper extends AbstractOIDCProtocolMapper
             DynamicScopeProtocolMapper.class);
 
     static {
+        ProviderConfigProperty multivaluedProperty = new ProviderConfigProperty();
+        multivaluedProperty.setName(ProtocolMapperUtils.MULTIVALUED);
+        multivaluedProperty.setLabel("Multivalued");
+        multivaluedProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        multivaluedProperty.setHelpText("If true, the claim will be an array of values.");
+        configProperties.add(multivaluedProperty);
+
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties,
                 DynamicScopeProtocolMapper.class);
@@ -48,9 +55,6 @@ public class DynamicScopeProtocolMapper extends AbstractOIDCProtocolMapper
             logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
             scopes.add(details.getDynamicScopeParam());
         }
-
-        // Force multivalued as the attribute is not defined for this mapper
-        mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
 
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, scopes);
     }

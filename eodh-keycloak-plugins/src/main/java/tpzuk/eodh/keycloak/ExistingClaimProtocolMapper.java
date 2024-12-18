@@ -32,6 +32,14 @@ public class ExistingClaimProtocolMapper extends AbstractOIDCProtocolMapper
         property.setRequired(true);
         configProperties.add(property);
 
+        property = new ProviderConfigProperty();
+        property.setName(ProtocolMapperUtils.MULTIVALUED);
+        property.setLabel("Multivalued");
+        property.setHelpText("If true, the claim will be an array of values.");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue("false");
+        configProperties.add(property);
+
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties,
                 DynamicScopeProtocolMapper.class);
@@ -42,10 +50,15 @@ public class ExistingClaimProtocolMapper extends AbstractOIDCProtocolMapper
             UserSessionModel userSession, KeycloakSession keycloakSession,
             ClientSessionContext clientSessionCtx) {
 
-        Object claim = token.getOtherClaims().get(mappingModel.getConfig().get(EXISTING_CLAIM));
+        Object claim = token.getOtherClaims().get(mappingModel.getConfig()
+                .get(EXISTING_CLAIM));
 
-        // Force multivalued as the attribute is not defined for this mapper
-        mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
+        // Handle single value to multivalue conversion if required
+        if (!(claim instanceof Collection)
+                && Boolean.parseBoolean(mappingModel.getConfig()
+                        .get(ProtocolMapperUtils.MULTIVALUED))) {
+            claim = Collections.singletonList(claim);
+        }
 
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claim);
     }
