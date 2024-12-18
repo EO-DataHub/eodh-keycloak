@@ -29,53 +29,61 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/// This class is a ProtocolMapper that adds user authorized workspaces to claims.
-/// Authorized workflows are fetched from an API and added to the token. The path to
-/// the workspaces array and the workspace name within the array can be configured.
-public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
+/// This class is a ProtocolMapper that adds calls an API to get claims to add
+/// to the token. The API is expected to return a JSON object containing a list
+/// at a defined path, from which a field is extracted from each object in the
+/// list. The fields are then added to the token as a multi-valued claim. 
+/// 
+/// The mapper can be configured to be dynamic, where it will filter the claims 
+/// based on the dynamic scope parameter and return it as a single-valued claim.
+/// Dynamic scoped claims that are not found in the API response will result in
+/// a 403 Forbidden response.
+/// 
+/// The API request is made with a signed OIDC token for authorization. Any
+/// claims required in the token should be composed using previous mappers.
+public class APIClaimsProtocolMapper extends AbstractOIDCProtocolMapper
         implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
-    public static final String PROVIDER_ID = "oidc-workspaces-protocol-mapper";
+    public static final String PROVIDER_ID = "oidc-api-claims-protocol-mapper";
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
     private static final String API_URL = "apiUrl";
-    private static final String WORKSPACES_RESPONSE_PATH = "workspacesResponsePath";
-    private static final String WORKSPACE_NAME_PATH = "workspaceNamePath";
+    private static final String RESPONSE_LIST_PATH = "responseListPath";
+    private static final String OBJECT_FIELD_PATH = "objectFieldPath";
 
     private static final Logger logger = Logger.getLogger(
-            WorkspacesProtocolMapper.class);
+            APIClaimsProtocolMapper.class);
 
     static {
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
         property.setName(API_URL);
         property.setLabel("API URL");
-        property.setHelpText("The URL of the API to check workspace authorization.");
+        property.setHelpText("The URL of the API to call.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setRequired(true);
         configProperties.add(property);
 
         property = new ProviderConfigProperty();
-        property.setName(WORKSPACES_RESPONSE_PATH);
-        property.setLabel("Workspaces Response Path");
-        property.setHelpText("The path within the response to the workspaces array. Separate children with dots.");
+        property.setName(RESPONSE_LIST_PATH);
+        property.setLabel("Response List Path");
+        property.setHelpText("The path within the response to the object array. Separate children with dots.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setDefaultValue("workspaces");
         property.setRequired(false);
         configProperties.add(property);
 
         property = new ProviderConfigProperty();
-        property.setName(WORKSPACE_NAME_PATH);
-        property.setLabel("Workspace Name Path");
+        property.setName(OBJECT_FIELD_PATH);
+        property.setLabel("Object Field Path");
         property.setHelpText(
-                "The path within the workspace object to the workspace name. Separate children with dots.");
+                "The path within the list object to the field. Separate children with dots.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setRequired(false);
+        property.setRequired(true);
         property.setDefaultValue("name");
         configProperties.add(property);
 
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties,
-                WorkspacesProtocolMapper.class);
+                APIClaimsProtocolMapper.class);
     }
 
     @Override
@@ -83,11 +91,12 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             UserSessionModel userSession, KeycloakSession keycloakSession,
             ClientSessionContext clientSessionCtx) {
 
-        // Get available workspaces for user
-        Set<String> workspaces = getWorkspaces(
+        // Get API response
+        Set<String> claims = getUserClaims(
                 mappingModel, keycloakSession.tokens().encode(token));
 
         // Check if there are any dynamic scopes to be applied
+        boolean isDynamic = false;
         for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
                 .getAuthorizationDetailEntries()) {
 
@@ -96,26 +105,32 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
                 continue;
             }
 
+            if (!isDynamic) {
+                isDynamic = true;
+            }
+
             logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
-            workspaces = workspaces.stream().filter(workspace -> workspace.equals(details.getDynamicScopeParam()))
+            claims = claims.stream().filter(claim -> claim.equals(details.getDynamicScopeParam()))
                     .collect(Collectors.toSet());
 
-            if (workspaces.isEmpty()) {
-                throw new ErrorResponseException("Forbidden", "Requested workspace not authorized",
+            if (claims.isEmpty()) {
+                throw new ErrorResponseException("Forbidden", "Requested claim not authorized",
                         Response.Status.FORBIDDEN);
             }
         }
 
-        // Force multivalued as the attribute is not defined for this mapper
-        mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
+        if (!isDynamic) {
+            mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
+        }
 
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, workspaces);
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claims);
     }
 
-    private Set<String> getWorkspaces(ProtocolMapperModel mapping, String token) {
+    private Set<String> getUserClaims(ProtocolMapperModel mapping, String token) {
         String apiUrl = mapping.getConfig().get(API_URL);
-        String workspacesPath = mapping.getConfig().get(WORKSPACES_RESPONSE_PATH);
-        String workspaceNamePath = mapping.getConfig().get(WORKSPACE_NAME_PATH);
+        String responseListPath = Optional.ofNullable(mapping.getConfig()
+                .get(RESPONSE_LIST_PATH)).map(String::trim).orElse(null);
+        String objectFieldPath = mapping.getConfig().get(OBJECT_FIELD_PATH);
 
         try {
             // Prepare the request
@@ -136,8 +151,8 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             int status = con.getResponseCode();
 
             if (status >= 400) {
-                throw new ErrorResponseException("Error Retrieving Workspaces",
-                        "Get Workspaces request failed with status " + status,
+                throw new ErrorResponseException("Error retrieving claims",
+                        "Get claims request failed with status " + status,
                         Response.Status.fromStatusCode(status));
             }
 
@@ -153,35 +168,37 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
             con.disconnect();
 
             // Parse the response
-            Set<String> workspaces = new HashSet<String>();
+            Set<String> claims = new HashSet<String>();
             try {
-                // Get the workspaces array
+                // Get the response array
                 JsonElement el = JsonParser.parseString(content.toString());
-                for (String path : workspacesPath.split("\\.")) {
-                    logger.info("Path: " + path);
-                    el = el.getAsJsonObject().get(path);
+                if (responseListPath != null && !responseListPath.isEmpty()) {
+                    for (String path : responseListPath.split("\\.")) {
+                        logger.info("Path: " + path);
+                        el = el.getAsJsonObject().get(path);
+                    }
                 }
                 JsonArray array = el.getAsJsonArray();
 
-                // Get the workspace name for each workspace in list
+                // Get the claim field for each object in list
                 for (JsonElement el2 : array) {
-                    for (String path : workspaceNamePath.split("\\.")) {
+                    for (String path : objectFieldPath.split("\\.")) {
                         el2 = el2.getAsJsonObject().get(path);
                     }
-                    workspaces.add(el2.getAsString());
+                    claims.add(el2.getAsString());
                 }
             } catch (JsonParseException e) {
-                logger.error(String.format("Error parsing user workspaces, workspaces path: %s, name path: %s",
-                        workspacesPath, workspaceNamePath), e);
-                throw new ErrorResponseException("Server Error", "Error parsing user workspaces",
+                logger.error(String.format("Error parsing user claims, list path: %s, field path: %s",
+                        responseListPath, objectFieldPath), e);
+                throw new ErrorResponseException("Server Error", "Error parsing user claims",
                         Response.Status.INTERNAL_SERVER_ERROR);
             }
 
-            // Return the workspaces
-            return workspaces;
+            // Return the claims
+            return claims;
         } catch (IOException e) {
-            logger.error("Error getting user workspaces", e);
-            throw new ErrorResponseException("Server Error", "Error getting user workspaces",
+            logger.error("Error getting user claims", e);
+            throw new ErrorResponseException("Server Error", "Error getting user claims",
                     Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
@@ -193,12 +210,12 @@ public class WorkspacesProtocolMapper extends AbstractOIDCProtocolMapper
 
     @Override
     public String getDisplayType() {
-        return "Workspaces Protocol Mapper";
+        return "API Claims Protocol Mapper";
     }
 
     @Override
     public String getHelpText() {
-        return "Adds user authorized workspaces to claims. Dynamic scoping can be used to filter workspaces.";
+        return "Adds user claims to token from API response. Dynamic scoping can be used to filter claims.";
     }
 
     @Override
