@@ -6,6 +6,7 @@ import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -42,7 +43,8 @@ import java.util.stream.Collectors;
 /// The API request is made with a signed OIDC token for authorization. Any
 /// claims required in the token should be composed using previous mappers.
 public class APIClaimsProtocolMapper extends AbstractOIDCProtocolMapper
-        implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+        implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper,
+        TokenIntrospectionTokenMapper {
 
     public static final String PROVIDER_ID = "oidc-api-claims-protocol-mapper";
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();

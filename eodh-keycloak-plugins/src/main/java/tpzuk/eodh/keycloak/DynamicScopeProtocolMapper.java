@@ -7,6 +7,7 @@ import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.rar.AuthorizationDetails;
@@ -17,7 +18,8 @@ import java.util.*;
 /// This class is a ProtocolMapper that adds dynamic scope parameters to claims.
 /// No authorisation takes place, so the user can map any value(s) to the claim.
 public class DynamicScopeProtocolMapper extends AbstractOIDCProtocolMapper
-        implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+        implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper,
+        TokenIntrospectionTokenMapper {
 
     public static final String PROVIDER_ID = "oidc-dynamic-scope-protocol-mapper";
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
