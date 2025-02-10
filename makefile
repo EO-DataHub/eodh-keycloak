@@ -1,7 +1,7 @@
 # Default input parameters
 docker ?= docker
-image ?= public.ecr.aws/n1b3o1k2/eodh-keycloak
-version ?= 26.0.4-0.2.1
+image ?= public.ecr.aws/eodh/eodh-keycloak
+version ?= 26.0.4-0.2.2
 
 .SILENT:
 MAKEFLAGS += --no-print-directory
