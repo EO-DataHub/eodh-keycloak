@@ -10,6 +10,7 @@ FROM quay.io/keycloak/keycloak:26.0.4
 
 USER root
 COPY --from=builder /build/target/*.jar /opt/keycloak/providers/
+COPY ./theme.jar /opt/keycloak/providers/keycloak-theme.jar
 USER 1000
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
