@@ -82,6 +82,12 @@ public class DynamicFilterProtocolMapper extends AbstractOIDCProtocolMapper
             }
         }
 
+        // Remove claim to be filtered
+        token.getOtherClaims().remove(mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME));
+
+        // Initialise filtered claims
+        Set<String> filteredClaims = new HashSet<>();
+
         // Apply filtering based on dynamic scopes
         for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
                 .getAuthorizationDetailEntries()) {
@@ -92,11 +98,18 @@ public class DynamicFilterProtocolMapper extends AbstractOIDCProtocolMapper
             }
 
             logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
-            claims = claims.stream().filter(claim -> claim.equals(details.getDynamicScopeParam()))
-                    .collect(Collectors.toSet());
+            filteredClaims.addAll(claims.stream().filter(claim -> claim.equals(details.getDynamicScopeParam()))
+                    .collect(Collectors.toSet()));
+
+            for (String claim : claims) {
+                if (claim.equals(details.getDynamicScopeParam())) {
+                    logger.debug("Dynamic scope parameter '" + claim + "' found in claims, added to filtered claims");
+                    filteredClaims.add(claim);
+                }
+            }
         }
 
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claims);
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, filteredClaims);
     }
 
     @Override
