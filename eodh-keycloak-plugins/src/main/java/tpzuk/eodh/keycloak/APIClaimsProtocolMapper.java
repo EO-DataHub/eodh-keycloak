@@ -2,24 +2,20 @@ package tpzuk.eodh.keycloak;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.*;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
-import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.IDToken;
-import org.keycloak.services.ErrorResponseException;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-
-import jakarta.ws.rs.core.Response;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,7 +24,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /// This class is a ProtocolMapper that adds calls an API to get claims to add
 /// to the token. The API is expected to return a JSON object containing a list
@@ -97,34 +92,10 @@ public class APIClaimsProtocolMapper extends AbstractOIDCProtocolMapper
         Set<String> claims = getUserClaims(
                 mappingModel, keycloakSession.tokens().encode(token));
 
-        // Check if there are any dynamic scopes to be applied
-        boolean isDynamic = false;
-        for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
-                .getAuthorizationDetailEntries()) {
+        // Claims are always multivalued
+        mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
 
-            if (!details.isDynamicScope() || !details.getClientScope().getName().equals(mappingModel.getConfig()
-                    .get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME))) {
-                continue;
-            }
-
-            if (!isDynamic) {
-                isDynamic = true;
-            }
-
-            logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
-            claims = claims.stream().filter(claim -> claim.equals(details.getDynamicScopeParam()))
-                    .collect(Collectors.toSet());
-
-            if (claims.isEmpty()) {
-                throw new ErrorResponseException("Forbidden", "Requested claim not authorized",
-                        Response.Status.FORBIDDEN);
-            }
-        }
-
-        if (!isDynamic) {
-            mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
-        }
-
+        // Add claims to token
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claims);
     }
 
@@ -140,9 +111,8 @@ public class APIClaimsProtocolMapper extends AbstractOIDCProtocolMapper
             try {
                 url = new URI(apiUrl).toURL();
             } catch (Exception e) {
-                logger.error("Error parsing API URL", e);
-                throw new ErrorResponseException("Server Error", "Error parsing API URL",
-                        Response.Status.INTERNAL_SERVER_ERROR);
+                logger.error("Error parsing API URL.", e);
+                return returnEmptyClaims();
             }
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
@@ -153,9 +123,15 @@ public class APIClaimsProtocolMapper extends AbstractOIDCProtocolMapper
             int status = con.getResponseCode();
 
             if (status >= 400) {
-                throw new ErrorResponseException("Error retrieving claims",
-                        "Get claims request failed with status " + status,
-                        Response.Status.fromStatusCode(status));
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                String errorLine;
+                StringBuffer errorContent = new StringBuffer();
+                while ((errorLine = errorReader.readLine()) != null) {
+                    errorContent.append(errorLine);
+                }
+                errorReader.close();
+                logger.error("Error retrieving claims: " + errorContent.toString());
+                return returnEmptyClaims();
             }
 
             // Read the response
@@ -192,17 +168,20 @@ public class APIClaimsProtocolMapper extends AbstractOIDCProtocolMapper
             } catch (JsonParseException e) {
                 logger.error(String.format("Error parsing user claims, list path: %s, field path: %s",
                         responseListPath, objectFieldPath), e);
-                throw new ErrorResponseException("Server Error", "Error parsing user claims",
-                        Response.Status.INTERNAL_SERVER_ERROR);
+                return returnEmptyClaims();
             }
 
             // Return the claims
             return claims;
         } catch (IOException e) {
             logger.error("Error getting user claims", e);
-            throw new ErrorResponseException("Server Error", "Error getting user claims",
-                    Response.Status.INTERNAL_SERVER_ERROR);
+            return returnEmptyClaims();
         }
+    }
+
+    private HashSet<String> returnEmptyClaims() {
+        logger.warn("Setting claims to empty list.");
+        return new HashSet<String>();
     }
 
     @Override

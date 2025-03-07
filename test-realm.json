@@ -41,20 +41,7 @@
           }
         },
         {
-          "name": "groups",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-group-membership-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "groups",
-            "id.token.claim": "false",
-            "lightweight.claim": "false",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "false"
-          }
-        },
-        {
-          "name": "workspace",
+          "name": "workspaces",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-api-claims-protocol-mapper",
           "consentRequired": false,
@@ -70,6 +57,19 @@
           }
         },
         {
+          "name": "active-workspace",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-dynamic-filter-protocol-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "workspace",
+            "id.token.claim": "false",
+            "lightweight.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
           "name": "aws-workspaces",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-existing-claim-protocol-mapper",
@@ -80,7 +80,8 @@
             "lightweight.claim": "false",
             "access.token.claim": "true",
             "userinfo.token.claim": "false",
-            "existingClaim": "workspaces"
+            "existingClaim": "workspace",
+            "multivalued": "true"
           }
         }
       ]
@@ -108,19 +109,6 @@
             "access.token.claim": "true",
             "userinfo.token.claim": "false",
             "user.attribute": "username"
-          }
-        },
-        {
-          "name": "groups",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-group-membership-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "groups",
-            "id.token.claim": "false",
-            "lightweight.claim": "false",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "false"
           }
         },
         {

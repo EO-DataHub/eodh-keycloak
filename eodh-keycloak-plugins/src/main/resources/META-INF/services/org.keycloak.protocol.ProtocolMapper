@@ -1,3 +1,4 @@
 tpzuk.eodh.keycloak.APIClaimsProtocolMapper
+tpzuk.eodh.keycloak.DynamicFilterProtocolMapper
 tpzuk.eodh.keycloak.DynamicScopeProtocolMapper
 tpzuk.eodh.keycloak.ExistingClaimProtocolMapper
