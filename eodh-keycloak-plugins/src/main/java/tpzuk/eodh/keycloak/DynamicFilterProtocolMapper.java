@@ -14,6 +14,7 @@ import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.IDToken;
 import java.util.*;
 import java.util.stream.Collectors;
+import jakarta.ws.rs.ForbiddenException;
 
 /// This class is a ProtocolMapper that adds calls an API to get claims to add
 /// to the token. The API is expected to return a JSON object containing a list
@@ -33,6 +34,7 @@ public class DynamicFilterProtocolMapper extends AbstractOIDCProtocolMapper
 
     public static final String PROVIDER_ID = "oidc-dynamic-filter-protocol-mapper";
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+    private static final String ERROR_IF_NULL = "errorIfNull";
 
     private static final Logger logger = Logger.getLogger(
             DynamicFilterProtocolMapper.class);
@@ -44,6 +46,14 @@ public class DynamicFilterProtocolMapper extends AbstractOIDCProtocolMapper
         multivaluedProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         multivaluedProperty.setHelpText("If true, the claim will be an array of values.");
         configProperties.add(multivaluedProperty);
+
+        ProviderConfigProperty errorIfNull = new ProviderConfigProperty();
+        errorIfNull.setName(ERROR_IF_NULL);
+        errorIfNull.setLabel("Error if null");
+        errorIfNull.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        errorIfNull.setDefaultValue("false");
+        errorIfNull.setHelpText("If true, the request will throw a 403 when filter returns no results.");
+        configProperties.add(errorIfNull);
 
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties,
@@ -72,7 +82,7 @@ public class DynamicFilterProtocolMapper extends AbstractOIDCProtocolMapper
 
         // Initialise filtered claims
         Set<String> filteredClaims = new HashSet<>();
-
+        Boolean errorIfNull = Boolean.parseBoolean(mappingModel.getConfig().get(ERROR_IF_NULL));
         // Apply filtering based on dynamic scopes
         for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
                 .getAuthorizationDetailEntries()) {
@@ -83,14 +93,21 @@ public class DynamicFilterProtocolMapper extends AbstractOIDCProtocolMapper
             }
 
             logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
-            filteredClaims.addAll(claims.stream().filter(claim -> claim.equals(details.getDynamicScopeParam()))
-                    .collect(Collectors.toSet()));
 
-            for (String claim : claims) {
-                if (claim.equals(details.getDynamicScopeParam())) {
-                    logger.debug("Dynamic scope parameter '" + claim + "' found in claims, added to filtered claims");
-                    filteredClaims.add(claim);
+            if (claims.contains(details.getDynamicScopeParam())) {
+                filteredClaims.add(details.getDynamicScopeParam());
+            } else {
+                if (errorIfNull) {
+                    throw new ForbiddenException(
+                            "Dynamic scope parameter '" + details.getDynamicScopeParam() +
+                                    "' not found in claims '"
+                                    + mappingModel.getConfig().get(
+                                            OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME)
+                                    + "'");
                 }
+                logger.debug("Dynamic scope parameter '" + details.getDynamicScopeParam()
+                        + "' not found in claims, skipping");
+                continue;
             }
         }
 
