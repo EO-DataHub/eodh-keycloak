@@ -13,7 +13,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.IDToken;
 import java.util.*;
-import java.util.stream.Collectors;
 import jakarta.ws.rs.ForbiddenException;
 
 /// This class is a ProtocolMapper that adds calls an API to get claims to add
