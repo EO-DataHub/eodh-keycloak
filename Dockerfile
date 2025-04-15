@@ -6,7 +6,7 @@ COPY eodh-keycloak-plugins/src src
 RUN mvn clean package
 
 
-FROM quay.io/keycloak/keycloak:26.0.4
+FROM quay.io/keycloak/keycloak:26.2.0
 
 USER root
 COPY --from=builder /build/target/*.jar /opt/keycloak/providers/

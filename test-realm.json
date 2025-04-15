@@ -9,7 +9,10 @@
       "secret": "e3rjr7sz9NVuAtRsg74XJUrEWG408o7W",
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true
+      "directAccessGrantsEnabled": true,
+      "attributes": {
+        "standard.token.exchange.enabled": true
+      }
     }
   ],
   "clientScopes": [
