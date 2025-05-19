@@ -14,6 +14,9 @@ container-build:
 container-push:
 	$(docker) push $(image):$(version)
 
+.PHONY: publish
+publish: container-build container-push
+
 .PHONY: run-dev
 run-dev:
 	$(docker) compose up --build -d && \
