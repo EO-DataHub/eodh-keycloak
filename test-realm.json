@@ -1,6 +1,16 @@
 {
   "realm": "test",
   "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "offline_access",
+        "description": "${role_offline-access}",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
   "clients": [
     {
       "clientId": "client",
@@ -10,22 +20,16 @@
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "fullScopeAllowed": true,
+      "serviceAccountsEnabled": true,
       "optionalClientScopes": [
-        "offline_access"
+        "offline_access",
+        "user_services",
+        "workspaces",
+        "workspace"
       ]
     }
   ],
   "clientScopes": [
-    {
-      "name": "offline_access",
-      "description": "OpenID Connect built-in scope: offline_access",
-      "protocol": "openid-connect",
-      "attributes": {
-        "consent.screen.text": "${offlineAccessScopeConsentText}",
-        "display.on.consent.screen": "true"
-      }
-    },
     {
       "name": "workspace",
       "description": "",
@@ -183,6 +187,15 @@
           }
         }
       ]
+    },
+    {
+      "name": "offline_access",
+      "description": "OpenID Connect built-in scope: offline_access",
+      "protocol": "openid-connect",
+      "attributes": {
+        "consent.screen.text": "${offlineAccessScopeConsentText}",
+        "display.on.consent.screen": "true"
+      }
     }
   ],
   "defaultOptionalClientScopes": [
@@ -198,21 +211,6 @@
         "offline_access"
       ]
     }
-  ],
-  "roles": {
-    "realm": [
-      {
-        "name": "offline_access",
-        "description": "${role_offline-access}",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "test"
-      }
-    ],
-    "client": {}
-  },
-  "defaultRoles": [
-    "offline_access"
   ],
   "users": [
     {
@@ -244,7 +242,10 @@
       "firstName": "Test",
       "lastName": "User2",
       "email": "user2@test.com",
-      "emailVerified": true
+      "emailVerified": true,
+      "realmRoles": [
+        "offline_access"
+      ]
     }
   ]
 }
