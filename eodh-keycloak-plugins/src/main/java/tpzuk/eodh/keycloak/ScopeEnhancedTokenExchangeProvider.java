@@ -422,13 +422,24 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser,
                 targetClient, scope);
 
-        if (targetUserSession == null) {
-            // if no session is associated with a subject_token, a transient session is
-            // created to only allow building a token to the audience
+        if ("true".equals(formParams.getFirst("eodh_is_api_key"))) {
+            logger.info("eodh_is_api_key is set to true");
+            // Force a new session for every exchange to ensure isolation of client sessions
+            // This prevents scope inheritance issues when multiple tokens are exchanged in
+            // the same user session
             targetUserSession = new UserSessionManager(session).createUserSession(
                     authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
                     clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
-                    UserSessionModel.SessionPersistenceState.TRANSIENT);
+                    UserSessionModel.SessionPersistenceState.PERSISTENT);
+        } else {
+            if (targetUserSession == null) {
+                // if no session is associated with a subject_token, a transient session is
+                // created to only allow building a token to the audience
+                targetUserSession = new UserSessionManager(session).createUserSession(
+                        authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
+                        clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
+                        UserSessionModel.SessionPersistenceState.TRANSIENT);
+            }
         }
 
         event.session(targetUserSession);

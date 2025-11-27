@@ -1,6 +1,16 @@
 {
   "realm": "test",
   "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "offline_access",
+        "description": "${role_offline-access}",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
   "clients": [
     {
       "clientId": "client",
@@ -9,7 +19,32 @@
       "secret": "e3rjr7sz9NVuAtRsg74XJUrEWG408o7W",
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "optionalClientScopes": [
+        "offline_access",
+        "user_services",
+        "workspaces",
+        "workspace"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "sub",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "clientScopes": [
@@ -170,6 +205,15 @@
           }
         }
       ]
+    },
+    {
+      "name": "offline_access",
+      "description": "OpenID Connect built-in scope: offline_access",
+      "protocol": "openid-connect",
+      "attributes": {
+        "consent.screen.text": "${offlineAccessScopeConsentText}",
+        "display.on.consent.screen": "true"
+      }
     }
   ],
   "defaultOptionalClientScopes": [
@@ -177,6 +221,14 @@
     "user_services",
     "workspaces",
     "workspace"
+  ],
+  "scopeMappings": [
+    {
+      "clientScope": "offline_access",
+      "roles": [
+        "offline_access"
+      ]
+    }
   ],
   "users": [
     {
@@ -191,7 +243,10 @@
       "firstName": "Test",
       "lastName": "User",
       "email": "user@test.com",
-      "emailVerified": true
+      "emailVerified": true,
+      "realmRoles": [
+        "offline_access"
+      ]
     },
     {
       "username": "user2",
@@ -205,7 +260,10 @@
       "firstName": "Test",
       "lastName": "User2",
       "email": "user2@test.com",
-      "emailVerified": true
+      "emailVerified": true,
+      "realmRoles": [
+        "offline_access"
+      ]
     }
   ]
 }
