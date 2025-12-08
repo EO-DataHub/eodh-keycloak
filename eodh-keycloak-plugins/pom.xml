@@ -53,9 +53,9 @@
   </dependencies>
 
   <properties>
-    <keycloak.version>26.0.4</keycloak.version>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <keycloak.version>26.4.7</keycloak.version>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
   </properties>
 
   <build>

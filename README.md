@@ -58,7 +58,7 @@ npm run build-keycloak-theme
 ```
 This will create two `.jar` files inside of `dist_keycloak`, it may take a few minutes.
 
-Now that we have the theme we want to copy it to this `eodhp-keycloak` repo. Firstly we need to find out the version of keycloak we are using. As of writing this we are using version `26.0.4` of keycloak.  
+Now that we have the theme we want to copy it to this `eodhp-keycloak` repo. Firstly we need to find out the version of keycloak we are using. As of writing this we are using version `26.4.7` of keycloak.  
 
 Copy over the version of the `.jar` which is for the correct version of keycloak and copy it into the root directory of this repo. Rename the file `theme.jar` overwriting the file that is already here. It must be named `theme.jar` as that is what the Dockerfile is expecting.
 
@@ -71,7 +71,7 @@ aws --profile eodhp-prod ecr-public get-login-password --region us-east-1 | dock
 Then to make the image locally run 
 
 ```bash
-make container-build version=26.0.4-0.2.2-rc2
+make container-build version=26.4.7-1.0.0
 ```
 
 Make sure to change the value of version to match the new version of the image you want to make.
@@ -79,7 +79,7 @@ Make sure to change the value of version to match the new version of the image y
 Then to push the image to ECR run
 
 ```bash
-make container-push version=26.0.4-0.2.2-rc2
+make container-push version=26.4.7-1.0.0
 ```
 
 ### Deploying the theme
@@ -87,7 +87,7 @@ Now that we have the image we need to deploy it. Go to the `eodhp-argocd-deploym
 ```bash
 - op: replace
     path: /spec/image
-    value: public.ecr.aws/eodh/eodh-keycloak:26.0.4-0.2.2-rc2
+    value: public.ecr.aws/eodh/eodh-keycloak:26.4.7-1.0.0
 ```
 Push this up.
 
