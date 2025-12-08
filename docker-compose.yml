@@ -21,7 +21,7 @@ services:
       - start-dev
       - --import-realm
       - --features
-      - dynamic-scopes:v1,token-exchange:v1
+      - dynamic-scopes:v1,token-exchange:v1,admin-fine-grained-authz:v1
       - --spi-oauth2-token-exchange-provider
       - scope-enhanced-token-exchange
     container_name: keycloak

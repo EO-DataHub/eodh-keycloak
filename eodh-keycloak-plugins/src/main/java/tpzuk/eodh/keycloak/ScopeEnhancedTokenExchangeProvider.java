@@ -51,7 +51,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -79,7 +79,7 @@ import jakarta.ws.rs.core.Response;
 /// increasing the scope of the target token from that of the subject token.
 public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider {
 
-    private static final Logger logger = Logger.getLogger(DefaultTokenExchangeProvider.class);
+    private static final Logger logger = Logger.getLogger(ScopeEnhancedTokenExchangeProvider.class);
 
     private MultivaluedMap<String, String> formParams;
     private KeycloakSession session;
@@ -91,6 +91,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
     private HttpHeaders headers;
     private TokenManager tokenManager;
     private Map<String, String> clientAuthAttributes;
+    private TokenExchangeContext tokenExchangeContext;
 
     @Override
     public boolean supports(TokenExchangeContext context) {
@@ -99,6 +100,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
 
     @Override
     public Response exchange(TokenExchangeContext context) {
+        this.tokenExchangeContext = context;
         this.formParams = context.getFormParams();
         this.session = context.getSession();
         this.cors = context.getCors();
@@ -114,6 +116,11 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public int getVersion() {
+        return 1; // V1 for legacy token exchange compatibility
     }
 
     protected Response tokenExchange() {
@@ -157,7 +164,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
             }
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm,
-                    session.getContext().getUri(), clientConnection, true, true, null, false, subjectToken, headers);
+                    session.getContext().getUri(), clientConnection, true, true, null, false, subjectToken, headers, null);
             if (authResult == null) {
                 event.detail(Details.REASON, "subject_token validation failure");
                 event.error(Errors.INVALID_TOKEN);
@@ -574,8 +581,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
         if (externalIdp.get() == null) { // searching by alias didn't work, search all IDPs using
                                          // ExchangeExternalToken.isIssuer to find a match
             session.identityProviders().getAllStream().filter(idpModel -> {
-                IdentityProvider idp = IdentityBrokerService.getIdentityProviderFactory(session, idpModel)
-                        .create(session, idpModel);
+                IdentityProvider idp = getIdentityProvider(session, idpModel);
                 if (idp instanceof ExchangeExternalToken) {
                     ExchangeExternalToken external = (ExchangeExternalToken) idp;
                     if (external.isIssuer(issuer, formParams)) {
@@ -599,7 +605,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED,
                     "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
-        BrokeredIdentityContext context = externalIdp.get().exchangeExternal(event, formParams);
+        BrokeredIdentityContext context = externalIdp.get().exchangeExternal(this, tokenExchangeContext);
         if (context == null) {
             event.error(Errors.INVALID_ISSUER);
             throw new CorsErrorResponseException(cors, Errors.INVALID_ISSUER,
@@ -766,12 +772,19 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
             AtomicReference<IdentityProviderModel> externalIdpModel) {
 
         IdentityProviderModel idpModel = session.identityProviders().getByAlias(alias);
-        IdentityProvider idp = IdentityBrokerService.getIdentityProviderFactory(session, idpModel).create(session,
-                idpModel);
+        IdentityProvider idp = getIdentityProvider(session, idpModel);
         if (idp instanceof ExchangeExternalToken) {
             externalIdp.set((ExchangeExternalToken) idp);
             externalIdpModel.set(idpModel);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static IdentityProvider<?> getIdentityProvider(KeycloakSession session, IdentityProviderModel model) {
+        org.keycloak.broker.provider.IdentityProviderFactory factory =
+            (org.keycloak.broker.provider.IdentityProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(IdentityProvider.class, model.getProviderId());
+        return factory.create(session, model);
     }
 
     public static class Factory implements TokenExchangeProviderFactory {
