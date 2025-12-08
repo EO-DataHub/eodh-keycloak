@@ -5,10 +5,7 @@ on:
     tags:
       - v[0-9]+*
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - "**"
 jobs:
   tag:
     uses: EO-DataHub/github-actions/.github/workflows/get-docker-tag.yaml@main
