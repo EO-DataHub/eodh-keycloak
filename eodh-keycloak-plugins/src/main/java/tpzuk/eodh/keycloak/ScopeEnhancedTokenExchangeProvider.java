@@ -164,7 +164,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
             }
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm,
-                    session.getContext().getUri(), clientConnection, true, true, null, false, subjectToken, headers, null);
+                    session.getContext().getUri(), clientConnection, true, true, null, false, subjectToken, headers, tokenVerifier -> {});
             if (authResult == null) {
                 event.detail(Details.REASON, "subject_token validation failure");
                 event.error(Errors.INVALID_TOKEN);
