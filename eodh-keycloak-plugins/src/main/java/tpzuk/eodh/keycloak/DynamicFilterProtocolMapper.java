@@ -86,25 +86,25 @@ public class DynamicFilterProtocolMapper extends AbstractOIDCProtocolMapper
         for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
                 .getAuthorizationDetailEntries()) {
 
-            if (!details.isDynamicScope() || !details.getClientScope().getName().equals(mappingModel.getConfig()
+            if (!details.isParameterizedScope() || !details.getClientScope().getName().equals(mappingModel.getConfig()
                     .get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME))) {
                 continue;
             }
 
             logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
 
-            if (claims.contains(details.getDynamicScopeParam())) {
-                filteredClaims.add(details.getDynamicScopeParam());
+            if (claims.contains(details.getParameterizedScopeParam())) {
+                filteredClaims.add(details.getParameterizedScopeParam());
             } else {
                 if (errorIfNull) {
                     throw new ForbiddenException(
-                            "Dynamic scope parameter '" + details.getDynamicScopeParam() +
+                            "Dynamic scope parameter '" + details.getParameterizedScopeParam() +
                                     "' not found in claims '"
                                     + mappingModel.getConfig().get(
                                             OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME)
                                     + "'");
                 }
-                logger.debug("Dynamic scope parameter '" + details.getDynamicScopeParam()
+                logger.debug("Dynamic scope parameter '" + details.getParameterizedScopeParam()
                         + "' not found in claims, skipping");
                 continue;
             }

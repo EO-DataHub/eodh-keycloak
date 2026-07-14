@@ -23,7 +23,7 @@ RUN git init -q . \
 RUN npm ci --no-audit --no-fund
 RUN npm run build-keycloak-theme
 
-FROM quay.io/keycloak/keycloak:26.4.7
+FROM quay.io/keycloak/keycloak:26.7.0
 
 USER root
 COPY --from=plugin-builder /build/target/*.jar /opt/keycloak/providers/

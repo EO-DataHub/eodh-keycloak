@@ -23,7 +23,7 @@
       "serviceAccountsEnabled": true,
       "optionalClientScopes": [
         "offline_access",
-        "user_services",
+        "user_service",
         "workspaces",
         "workspace"
       ],
@@ -57,8 +57,8 @@
         "display.on.consent.screen": "false",
         "gui.order": "0",
         "consent.screen.text": "",
-        "is.dynamic.scope": "true",
-        "dynamic.scope.regexp": "workspace:*"
+        "is.parameterized.scope": "true",
+        "parameterized.scope.type": "string"
       },
       "protocolMappers": [
         {
@@ -165,7 +165,7 @@
       ]
     },
     {
-      "name": "user_services",
+      "name": "user_service",
       "description": "",
       "protocol": "openid-connect",
       "attributes": {
@@ -173,8 +173,8 @@
         "display.on.consent.screen": "false",
         "gui.order": "0",
         "consent.screen.text": "",
-        "is.dynamic.scope": "true",
-        "dynamic.scope.regexp": "user_service:*"
+        "is.parameterized.scope": "true",
+        "parameterized.scope.type": "string"
       },
       "protocolMappers": [
         {
@@ -184,6 +184,7 @@
           "consentRequired": false,
           "config": {
             "claim.name": "user_services",
+            "scope.name": "user_service",
             "id.token.claim": "false",
             "lightweight.claim": "false",
             "access.token.claim": "true",
@@ -218,7 +219,7 @@
   ],
   "defaultOptionalClientScopes": [
     "offline_access",
-    "user_services",
+    "user_service",
     "workspaces",
     "workspace"
   ],
