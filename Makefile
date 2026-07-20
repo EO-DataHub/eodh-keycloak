@@ -1,21 +1,15 @@
 # Default input parameters
 docker ?= docker
-image ?= public.ecr.aws/eodh/eodh-keycloak
-version ?= 26.4.7-0.3.0
+image ?= eodh-keycloak
+version ?= dev
 
 .SILENT:
 MAKEFLAGS += --no-print-directory
 
+# Local smoke build only — publishing to ECR is done by CI (see README).
 .PHONY: container-build
 container-build:
 	$(docker) build -t $(image):$(version) .
-
-.PHONY: container-push
-container-push:
-	$(docker) push $(image):$(version)
-
-.PHONY: publish
-publish: container-build container-push
 
 .PHONY: run-dev
 run-dev:

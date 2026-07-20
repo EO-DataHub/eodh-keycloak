@@ -1,0 +1,7 @@
+.git
+.worktrees
+.venv
+node_modules
+__pycache__
+eodh-keycloak-plugins/target
+theme.jar
