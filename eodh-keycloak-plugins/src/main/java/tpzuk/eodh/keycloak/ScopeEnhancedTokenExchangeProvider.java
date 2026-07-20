@@ -10,6 +10,7 @@ import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -25,6 +26,8 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -55,6 +58,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
@@ -118,11 +122,6 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
     public void close() {
     }
 
-    @Override
-    public int getVersion() {
-        return 1; // V1 for legacy token exchange compatibility
-    }
-
     protected Response tokenExchange() {
 
         UserModel tokenUser = null;
@@ -172,9 +171,9 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
                         Response.Status.BAD_REQUEST);
             }
 
-            tokenUser = authResult.getUser();
-            tokenSession = authResult.getSession();
-            token = authResult.getToken();
+            tokenUser = authResult.user();
+            tokenSession = authResult.session();
+            token = authResult.token();
         }
 
         String requestedSubject = formParams.getFirst(OAuth2Constants.REQUESTED_SUBJECT);
@@ -187,7 +186,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
                 requestedUser = session.users().getUserById(realm, requestedSubject);
             }
 
-            if (requestedUser == null) {
+            if (requestedUser == null || !requestedUser.isEnabled()) {
                 // We always returned access denied to avoid username fishing
                 event.detail(Details.REASON, "requested_subject not found");
                 event.error(Errors.NOT_ALLOWED);
@@ -360,7 +359,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
             // targetClient
             scope = Arrays.stream(scope.split(" "))
                     .filter(s -> "openid".equals(s) || (targetClientScopes
-                            .contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s)))
+                            .contains(Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) ? s.split(":")[0] : s)))
                     .collect(Collectors.joining(" "));
         } else if (token != null && token.getScope() != null) {
             Set<String> targetClientScopes = new HashSet<String>();
@@ -370,7 +369,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
             // targetClient
             scope = Arrays.stream(scope.split(" "))
                     .filter(s -> "openid".equals(s) || (targetClientScopes
-                            .contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s)))
+                            .contains(Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) ? s.split(":")[0] : s)))
                     .collect(Collectors.joining(" "));
         }
 
@@ -580,7 +579,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
 
         if (externalIdp.get() == null) { // searching by alias didn't work, search all IDPs using
                                          // ExchangeExternalToken.isIssuer to find a match
-            session.identityProviders().getAllStream().filter(idpModel -> {
+            session.identityProviders().getAllStream(IdentityProviderQuery.type(IdentityProviderType.EXCHANGE_EXTERNAL_TOKEN)).filter(idpModel -> {
                 IdentityProvider idp = getIdentityProvider(session, idpModel);
                 if (idp instanceof ExchangeExternalToken) {
                     ExchangeExternalToken external = (ExchangeExternalToken) idp;
@@ -620,8 +619,8 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
 
         // this must exist so that we can obtain access token from user session if idp's
         // store tokens is off
-        userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
-        userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
+        userSession.setNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
+        userSession.setNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
         context.addSessionNotesToUserSession(userSession);
 
@@ -711,7 +710,7 @@ public class ScopeEnhancedTokenExchangeProvider implements TokenExchangeProvider
                 target.importNewUser(session, realm, user, mapper, context);
             }
 
-            if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(user.getEmail())) {
+            if (Booleans.isTrue(context.getIdpConfig().isTrustEmail()) && !Validation.isBlank(user.getEmail())) {
                 logger.debugf(
                         "Email verified automatically after registration of user '%s' through Identity provider '%s' ",
                         user.getUsername(), context.getIdpConfig().getAlias());

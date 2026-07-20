@@ -22,6 +22,7 @@ public class DynamicScopeProtocolMapper extends AbstractOIDCProtocolMapper
         TokenIntrospectionTokenMapper {
 
     public static final String PROVIDER_ID = "oidc-dynamic-scope-protocol-mapper";
+    public static final String SCOPE_NAME = "scope.name";
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     private static final Logger logger = Logger.getLogger(
@@ -35,6 +36,14 @@ public class DynamicScopeProtocolMapper extends AbstractOIDCProtocolMapper
         multivaluedProperty.setHelpText("If true, the claim will be an array of values.");
         configProperties.add(multivaluedProperty);
 
+        ProviderConfigProperty scopeNameProperty = new ProviderConfigProperty();
+        scopeNameProperty.setName(SCOPE_NAME);
+        scopeNameProperty.setLabel("Scope Name");
+        scopeNameProperty.setType(ProviderConfigProperty.STRING_TYPE);
+        scopeNameProperty.setHelpText(
+                "Name of the client scope whose parameterized scope values are mapped. Defaults to the claim name.");
+        configProperties.add(scopeNameProperty);
+
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties,
                 DynamicScopeProtocolMapper.class);
@@ -45,17 +54,21 @@ public class DynamicScopeProtocolMapper extends AbstractOIDCProtocolMapper
             UserSessionModel userSession, KeycloakSession keycloakSession,
             ClientSessionContext clientSessionCtx) {
 
+        String scopeName = mappingModel.getConfig().get(SCOPE_NAME);
+        if (scopeName == null || scopeName.isEmpty()) {
+            scopeName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+        }
+
         List<String> scopes = new ArrayList<>();
         for (AuthorizationDetails details : clientSessionCtx.getAuthorizationRequestContext()
                 .getAuthorizationDetailEntries()) {
 
-            if (!details.isDynamicScope() || !details.getClientScope().getName().equals(mappingModel.getConfig()
-                    .get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME))) {
+            if (!details.isParameterizedScope() || !details.getClientScope().getName().equals(scopeName)) {
                 continue;
             }
 
             logger.debug("Applying dynamic scope " + details.getAuthorizationDetails().getScopeNameFromCustomData());
-            scopes.add(details.getDynamicScopeParam());
+            scopes.add(details.getParameterizedScopeParam());
         }
 
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, scopes);

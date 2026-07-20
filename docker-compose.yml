@@ -1,13 +1,12 @@
 services:
   postgres:
     image: postgres:14
-    container_name: keycloak-postgres
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - "8432:5432"
+      - "${POSTGRES_PORT:-8432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -21,10 +20,9 @@ services:
       - start-dev
       - --import-realm
       - --features
-      - dynamic-scopes:v1,token-exchange:v1,admin-fine-grained-authz:v1
-      - --spi-oauth2-token-exchange-provider
+      - parameterized-scopes:v1,token-exchange:v1,admin-fine-grained-authz:v1
+      - --spi-oauth2-token-exchange--provider
       - scope-enhanced-token-exchange
-    container_name: keycloak
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -34,7 +32,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_LOG_LEVEL: INFO
     ports:
-      - "8080:8080"
+      - "${KEYCLOAK_PORT:-8080}:8080"
     volumes:
       - ./test-realm.json:/opt/keycloak/data/import/test-realm.json
     depends_on:
@@ -46,11 +44,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.workspaces
-    container_name: workspaces
     environment:
       ALLOWED_USERS: user
     ports:
-      - "8000:8000"
+      - "${WORKSPACES_PORT:-8000}:8000"
     networks:
       - keycloak-network
     restart: always
