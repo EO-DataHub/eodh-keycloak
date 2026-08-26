@@ -12,7 +12,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 ARG THEME_REPO=https://github.com/EO-DataHub/keycloakify-starter.git
-ARG THEME_REF=f4188214ab1d606672eac2cdfe5fc8e3888ba01e
+ARG THEME_REF=719b7145dbef940db380344596c0632ba9bc607c
 
 WORKDIR /theme
 RUN git init -q . \
