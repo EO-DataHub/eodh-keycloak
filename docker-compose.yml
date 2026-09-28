@@ -46,6 +46,7 @@ services:
       dockerfile: Dockerfile.workspaces
     environment:
       ALLOWED_USERS: user
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/test/protocol/openid-connect/certs
     ports:
       - "${WORKSPACES_PORT:-8000}:8000"
     networks:
