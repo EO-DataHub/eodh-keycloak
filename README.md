@@ -74,6 +74,11 @@ web-presence CMS admin, which reads them through the `web-presence-admin`
 service account (`realm-management` roles `view-users`, `query-users` and
 `view-events`).
 
+The `eodh-last-login` event listener stores the time of each user's latest
+successful login in the `lastLoginTime` attribute (milliseconds since the
+epoch). Token refreshes don't count. The user profile declares the attribute as
+admin-view only and not editable.
+
 `test-realm.json` has the same event settings and a `web-presence-admin`
 client. To use it from a local web presence, set:
 
