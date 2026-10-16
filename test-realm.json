@@ -1,6 +1,16 @@
 {
   "realm": "test",
   "enabled": true,
+  "eventsEnabled": true,
+  "eventsExpiration": 34560000,
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "enabledEventTypes": [
+    "LOGIN",
+    "REGISTER"
+  ],
+  "adminEventsEnabled": false,
   "roles": {
     "realm": [
       {
@@ -45,6 +55,23 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "web-presence-admin",
+      "name": "Web Presence Admin",
+      "description": "Read-only Keycloak Admin API access for the Hub users list and login activity export in the web-presence CMS",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "web-presence-admin-local-secret",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": false,
+      "defaultClientScopes": [],
+      "optionalClientScopes": []
     }
   ],
   "clientScopes": [
@@ -231,6 +258,18 @@
       ]
     }
   ],
+  "clientScopeMappings": {
+    "realm-management": [
+      {
+        "client": "web-presence-admin",
+        "roles": [
+          "view-users",
+          "query-users",
+          "view-events"
+        ]
+      }
+    ]
+  },
   "users": [
     {
       "username": "user",
@@ -265,6 +304,18 @@
       "realmRoles": [
         "offline_access"
       ]
+    },
+    {
+      "username": "service-account-web-presence-admin",
+      "enabled": true,
+      "serviceAccountClientId": "web-presence-admin",
+      "clientRoles": {
+        "realm-management": [
+          "view-users",
+          "query-users",
+          "view-events"
+        ]
+      }
     }
   ]
 }
