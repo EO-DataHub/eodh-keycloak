@@ -66,6 +66,31 @@ password is in AWS Secrets Manager), switch to the `eodhp` realm (not master),
 then go to `Realm settings > Themes` and select the `keycloakify-starter`
 theme.
 
+## Login activity
+
+The realm saves `LOGIN` and `REGISTER` user events for 400 days. Hub admins
+download them as monthly CSVs from *Hub users > Login activity* in the
+web-presence CMS admin, which reads them through the `web-presence-admin`
+service account (`realm-management` roles `view-users`, `query-users` and
+`view-events`).
+
+`test-realm.json` has the same event settings and a `web-presence-admin`
+client. To use it from a local web presence, set:
+
+```bash
+KEYCLOAK_ADMIN_BASE_URL=http://localhost:8080
+KEYCLOAK_REALM=test
+KEYCLOAK_ADMIN_CLIENT_SECRET=web-presence-admin-local-secret
+```
+
+`--import-realm` skips realms that already exist, so after changing
+`test-realm.json` run `docker compose down -v` to re-import it.
+
+Realm imports only create realms, so deployed realms need these settings
+applied by hand; the steps are in the
+[eodhp-argocd-deployment](https://github.com/EO-DataHub/eodhp-argocd-deployment)
+Keycloak README (`apps/keycloak/README.md`).
+
 ## Releasing
 
 CI (`.github/workflows/publish.yaml`) builds the image and publishes it to the
