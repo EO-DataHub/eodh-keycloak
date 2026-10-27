@@ -26,6 +26,15 @@ RUN npm run build-keycloak-theme
 FROM quay.io/keycloak/keycloak:26.7.4
 
 USER root
+
+# Distrust the eMudhra intermediates with leaked keys. Java still trusts their
+# Sectigo AAA cross-signed copies, so removing the emSign roots is not enough.
+COPY emudhra-blocked.certs /tmp/emudhra-blocked.certs
+RUN blocked="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")/lib/security/blocked.certs" \
+ && grep -q "^Algorithm=SHA-256" "$blocked" \
+ && { echo; cat /tmp/emudhra-blocked.certs; } >> "$blocked" \
+ && rm /tmp/emudhra-blocked.certs
+
 COPY --from=plugin-builder /build/target/*.jar /opt/keycloak/providers/
 COPY --from=theme-builder /theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar /opt/keycloak/providers/keycloak-theme.jar
 USER 1000
