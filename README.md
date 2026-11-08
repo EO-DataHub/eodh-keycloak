@@ -72,7 +72,8 @@ The realm saves `LOGIN` and `REGISTER` user events for 400 days. Hub admins
 download them as monthly CSVs from *Hub users > Login activity* in the
 web-presence CMS admin, which reads them through the `web-presence-admin`
 service account (`realm-management` roles `view-users`, `query-users` and
-`view-events`).
+`view-events`) and the `kc-admin-api` default client scope, which Keycloak
+26.8.2+ requires for Admin API calls.
 
 The `eodh-last-login` event listener stores the time of each user's latest
 successful login in the `lastLoginTime` attribute (milliseconds since the
